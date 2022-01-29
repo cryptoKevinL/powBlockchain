@@ -44,11 +44,13 @@ const genesisBlock = {
   }
 
 class Blockchain {
-    constructor() {
-      console.log('blockchain constructor');
+    //since this is a local blockchain, we differentiate miners by port number
+    constructor(minerPort) {
+      console.log(`blockchain constructor for miner: ${minerPort}`);
       this.mempool = [];
       this.isMining = false;
       this.blocks =[];
+      this.minerPort = minerPort;
 
       //lets ask for blocks no matter what, so we dont
       //have to do special cases for the genesis block
@@ -73,7 +75,7 @@ class Blockchain {
 
     mine(){
         setInterval(() => {
-        console.log("mining a block");
+        console.log(`Miner: ${this.minerPort} mined a block`);
         }, 500);
     }
 }

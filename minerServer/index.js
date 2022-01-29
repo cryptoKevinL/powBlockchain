@@ -69,7 +69,7 @@ app.post('/send', (req, res) => {
   }
 });
 
-let minerCopyOfBlockchain = new Blockchain();
+let minerCopyOfBlockchain = new Blockchain(port);
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}!`);
