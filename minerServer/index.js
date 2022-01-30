@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-let port = 4000;
+let port = 4001;
 const SHA256 = require('js-sha256');
 const { Blockchain } = require('./Blockchain');
 const { executePeerRequest, broadcastPeerNotice } = require('./utils');
@@ -31,17 +31,17 @@ const balances = {
   3: 75,
 }
 
+let minerCopyOfBlockchain = new Blockchain(port);
+let minerPeers = new Array();
+let minerAddress = port.toString();
+
 //TODO:
 //get list of peers
 //for bootstrapping this BC, we could assume "addresses" are sequenetial.  
 //They don't HAVE to be, but without this or a known list of "online"
 //peers, we would have to hardcode it.  That would work too...
-broadcastPeerNotice(port);
+broadcastPeerNotice(minerPeers, port);
 //executePeerRequest(this.minerPeers, 'peerList').then(console.log("printed"));
-
-let minerCopyOfBlockchain = new Blockchain(port);
-let minerPeers = [];
-let minerAddress = port.toString();
 
 //still neet to work this out if needed- incomplete
 function getShortPubFromPriv(address){

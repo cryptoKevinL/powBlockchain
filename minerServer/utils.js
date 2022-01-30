@@ -28,7 +28,7 @@ const fetch = require('node-fetch');
     }
   }
 
-const broadcastPeerNotice = async (address) => {
+const broadcastPeerNotice = async (minerpeers, address) => {
   //bootstrapping case here...
   //assume port 4000 (default) is satoshi
   if(address == 4000)
@@ -46,6 +46,7 @@ const broadcastPeerNotice = async (address) => {
     return response.json();
   }).then(({ port }) => {
     console.log(`Peers: ${port}`);
+    minerpeers.push(port);
   });
 }
 
