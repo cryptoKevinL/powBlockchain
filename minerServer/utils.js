@@ -31,25 +31,21 @@
     }
   }
 
-const broadcastPeerNotice = async (myAddress) => {
+const broadcastPeerNotice = async (address) => {
   //bootstrapping case here...
   //assume port 4000 (default) is satoshi
-  if(myAddress == 4000)
+  if(address == 4000)
     return;
-
   //bootstrapping again, assume if we are not 4000, the 
   //previous port/address is a peer
-  const peer = myAddress - 1;
+  const peer = address - 1;
 
-  let request = fetch(`http://localhost:${peer}/newPeer`, 
-  {method: 'POST', body: JSON.stringify(peer), headers: { 'Content-Type': 'application/json' }})
-  .then(response => response.json());
+  const body = JSON.stringify({
+    address
+  });
 
-  try {
-    return await Promise.all(request);
-  } catch (e) {
-    console.log('Failed fetch', e);
-  }
+  fetch( `http://localhost:${peer}/newPeer`, 
+  {method: 'POST', body, headers: { 'Content-Type': 'application/json' }});
 }
 
 module.exports = { executePeerRequest,

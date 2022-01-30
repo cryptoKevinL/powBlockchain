@@ -48,12 +48,12 @@ function getShortPubFromPriv(address){
   //return shortPub;
 }
 
-//newPeer
-app.get('/newPeer/:address', (req, res) => {
-  const {address} = req.params;
-  const balance = balances[address] || 0;
-  //res.send({ balance });
-});
+// //newPeer
+// app.get('/newPeer/:address', (req, res) => {
+//   const {address} = req.params;
+//   const balance = balances[address] || 0;
+//   //res.send({ balance });
+// });
 
 //if anyone calls this, return true
 app.get('/checkPeerAlive', (req, res) => {
@@ -82,7 +82,7 @@ app.post('/newPeer', (req, res) => {
   minerPeers.push(req.body.peer)
 
   //TODO: could optimize and return a list of our peers here
-  res.send("success");
+  res.send( {result: "success"} );
 });
 
 //if anyone calls this, return current list of blocks
