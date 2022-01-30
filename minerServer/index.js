@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-let port = 3000;
+let port = 4000;
 const SHA256 = require('js-sha256');
 const { Blockchain } = require('./Blockchain');
 const { executePeerRequest, broadcastPeerNotice } = require('./utils');
