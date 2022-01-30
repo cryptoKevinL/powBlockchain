@@ -45,8 +45,10 @@ const broadcastPeerNotice = async (minerpeers, address) => {
   {method: 'POST', body, headers: { 'Content-Type': 'application/json' }}).then(response => {
     return response.json();
   }).then(({ peerPort }) => {
-    console.log(`Peers: ${peerPort}`);
-    minerpeers.push(peerPort);
+    console.log(`peerPort: ${peerPort}`);
+    minerpeers.push(peerPort); //add the returned peer list 
+    minerpeers.push(peer.toString());  //add the bootstrapped peer
+    console.log(`Peers: ${minerpeers}`);
   });
 }
 

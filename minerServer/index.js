@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-let port = 4001;
+let port = 4002;
 const SHA256 = require('js-sha256');
 const { Blockchain } = require('./Blockchain');
 const { executePeerRequest, broadcastPeerNotice } = require('./utils');
@@ -72,7 +72,7 @@ app.post('/peerList', (req, res) => {
   console.log('req.body', req.body);
 
   //TODO: make this list unique
-  minerPeers.push(req.body.peers)
+  minerPeers.push(req.body.peers.toString());
 
   res.send("success");
 });
@@ -81,9 +81,10 @@ app.post('/newPeer', (req, res) => {
   console.log('POST /newPeer');
   console.log('req.body', req.body);
 
-  minerPeers.push(req.body.address)
-
   let peerPort = JSON.stringify(minerPeers);
+
+  //now add the sent peer
+  minerPeers.push(req.body.address.toString());
 
   console.log('returning peers', peerPort);
   res.send({ peerPort });
