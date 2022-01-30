@@ -14,7 +14,6 @@
     "elliptic": "^6.5.4",
     "express": "^4.17.1",
     "js-sha256": "^0.9.0",
-    "node-fetch": "^3.2.0"
+    "node-fetch": "^2.6.5"
   }
-  
 }

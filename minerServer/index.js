@@ -3,7 +3,8 @@ const app = express();
 const cors = require('cors');
 let port = 4000;
 const SHA256 = require('js-sha256');
-const { Blockchain, executePeerRequest, broadcastPeerNotice } = require('./Blockchain');
+const { Blockchain } = require('./Blockchain');
+const { executePeerRequest, broadcastPeerNotice } = require('./utils');
 
 const serverForNodeManagement = `http://localhost:3042`;
 
