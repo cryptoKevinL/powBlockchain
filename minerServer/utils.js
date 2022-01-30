@@ -13,7 +13,7 @@ const executePeerRequest = async (from, peers, apiCmd, data) => {
         return;
   
     if(data) {
-        console.log('data', data);
+        //console.log('data', data);
         requests = peers.map(peer => fetch(`http://localhost:${peer}/${apiCmd}`, 
         {method: 'POST', body: JSON.stringify( {from, data} ), headers: { 'Content-Type': 'application/json' }})
         .then(response => response.json()));

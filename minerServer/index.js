@@ -112,7 +112,7 @@ app.get('/blockchainBlocks', (req, res) => {
 //broadcast to all thier peers 
 app.post('/minedBlock', (req, res) => {
   console.log('POST /minedBlock');
-  console.log('req.body', req.body);
+  //console.log('req.body', req.body);
   const peerAddress = req.body.from;
   const newBlocks = req.body.data.blocks;
   console.log(`Peer: ${peerAddress} has notified you of a POW mined block`)

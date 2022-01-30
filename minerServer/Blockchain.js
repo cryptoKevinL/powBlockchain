@@ -74,7 +74,7 @@ class Blockchain {
             
             candidateNonce = 1;
           }
-        }, 500);
+        }, 1000);
     }
 }
 
