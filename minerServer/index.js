@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-let port = 4002;
+let port = 4000;
 const SHA256 = require('js-sha256');
 const { Blockchain } = require('./Blockchain');
 const { executePeerRequest, broadcastPeerNotice } = require('./utils');
@@ -31,23 +31,26 @@ const balances = {
   3: 75,
 }
 
-let minerCopyOfBlockchain = new Blockchain(port);
-let minerPeers = new Array();
+let minerPeers = new Array(); //originally was trying to keep this separate from BC data struct but got stuck/out of time
+let minerCopyOfBlockchain = new Blockchain(port, minerPeers);
 let minerAddress = port.toString();
 
-//TODO:
-//get list of peers
 //for bootstrapping this BC, we could assume "addresses" are sequenetial.  
 //They don't HAVE to be, but without this or a known list of "online"
 //peers, we would have to hardcode it.  That would work too...
 broadcastPeerNotice(minerPeers, port);
-//executePeerRequest(this.minerPeers, 'peerList').then(console.log("printed"));
 
 //still neet to work this out if needed- incomplete
 function getShortPubFromPriv(address){
   const fullPubKey = ec.keyFromPrivate(address).getPublic('hex');
   return fullPubKey;
   //return shortPub;
+}
+
+function clearArray(array) {
+  while (array.length) {
+    array.pop();
+  }
 }
 
 // GET with parameters
@@ -71,8 +74,18 @@ app.post('/peerList', (req, res) => {
   console.log('POST /peerList');
   console.log('req.body', req.body);
 
+   // const tempMinerPeers = minerPeers.map(obj => obj);
+
+  // //this seems messy, but I am using mutable references
+  // //so we cannot simply set copy = minerPeers.  Doesn't work
+  // //and even worse it doesn't throw any errors, its just undefined
+  // clearArray(minerCopyOfBlockchain.minerPeers);
+
+  // for(let i=0; i<tempMinerPeers.length; i++)
+  //   minerCopyOfBlockchain.minerPeers.push(tempMinerPeers[i]);
+
   //TODO: make this list unique
-  minerPeers.push(req.body.peers.toString());
+  minerPeers.push(req.body.data.peers.toString());
 
   res.send("success");
 });
@@ -100,7 +113,8 @@ app.get('/blockchainBlocks', (req, res) => {
 app.post('/minedBlock', (req, res) => {
   console.log('POST /minedBlock');
   console.log('req.body', req.body);
-  const peerAddress = req.body.peerAddress;
+  const peerAddress = req.body.from;
+  const newBlocks = req.body.data.blocks;
   console.log(`Peer: ${peerAddress} has notified you of a POW mined block`)
   
   //TODO:
@@ -111,18 +125,19 @@ app.post('/minedBlock', (req, res) => {
   //Now verify that this blockchain is longer than the one we currently have
   //otherwise we would ignore the peer broadcast, as they are behind the times,
   //or they are trying to hack the blockchain and they are bad people
-  if (req.body.blocks.length > minerCopyOfBlockchain.blocks.length) {
+  if (newBlocks.length > minerCopyOfBlockchain.blocks.length) {
     console.log('Updating local blockchain');
 
     //stop the current mining going on, then update the blocks
     //and start mining again
     minerCopyOfBlockchain.blocksUpdatedExternally = true;
-    while(minerCopyOfBlockchain.isMining);
-    minerCopyOfBlockchain.blocks = req.body.blocks;
+    // while(minerCopyOfBlockchain.isMining) 
+    //   setTimeout(function(){console.log("for sleeping")}, 50);
+    minerCopyOfBlockchain.blocks = newBlocks;
     minerCopyOfBlockchain.mine();
   }
 
-  res.send(state.blockchain.toJson());
+  res.send(JSON.stringify(minerCopyOfBlockchain));
 });
 
 app.listen(port, () => {

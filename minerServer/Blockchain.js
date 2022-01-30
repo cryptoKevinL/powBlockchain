@@ -1,11 +1,14 @@
+const { getBlockHash, targetDifficulty, executePeerRequest } = require('./utils');
+const SHA256 = require('js-sha256');
 class Blockchain {
     //since this is a local blockchain, we differentiate miners by port number
-    constructor(minerPort) {
+    constructor(minerPort, minerPeers) {
       console.log(`blockchain constructor for miner: ${minerPort}`);
       this.mempool = [];
       this.isMining = false;
       this.blocks =[];
       this.minerPort = minerPort;
+      this.minerPeers = minerPeers;
       //if we get update blocks from peers, we may as well stop mining the block we were doing
       this.blocksUpdatedExternally = false;  
 
@@ -29,22 +32,49 @@ class Blockchain {
     }
 
     mine(){
-        this.isMining = true;       
+        this.isMining = true;     
+        
+        let candidateNonce = 1;
       
         setInterval(() => {
-        //break out of current POW loop, if someone else mined this block
-        if(this.blocksUpdatedExternally){
-          this.blocksUpdatedExternally = false;
-          this.isMining = false;
-          return;
-        }
+          //break out of current POW loop, if someone else mined this block
+          if(this.blocksUpdatedExternally){
+            this.blocksUpdatedExternally = false;
+            this.isMining = false;
+            return;
+          }
 
-        console.log(`Miner: ${this.minerPort} mined a block`);
+          const candidateBlock = {
+            height: this.blocks.length,
+            previousHash: getBlockHash(this.blocks[this.blocks.length - 1]),
+            transactions: [
+              {
+                sender: 'coinbase',
+                recipient: this.minerPort.toString(), //miner port is our address in this example for now until we add pub/priv keys
+                amount: 50
+              }
+            ],
+            nonce: candidateNonce
+          };
 
-        //TODO:
-        //broadcast successfully mined block
-        
-        }, 5000);
+          const candidateBlockStringified = JSON.stringify(candidateBlock);
+
+          const candidateBlockHash = SHA256(candidateBlockStringified);
+
+          candidateNonce++;
+
+          if (BigInt(`0x${candidateBlockHash}`) < targetDifficulty) {
+            console.log(`Miner: ${this.minerPort} mined a block`);
+            console.log('candidateBlockHash', candidateBlockHash.toString());
+            this.blocks.push(candidateBlock);
+
+            //broadcast successfully mined block
+            //feel as if this should happen in miner code, but currently too lazy to alert
+            executePeerRequest(this.minerPort, this.minerPeers, 'minedBlock', { blocks: this.blocks });
+            
+            candidateNonce = 1;
+          }
+        }, 500);
     }
 }
 

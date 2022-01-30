@@ -1,6 +1,8 @@
 const { response } = require('express');
 const fetch = require('node-fetch');
-  const executePeerRequest = async (peers, apiCmd, data) => {
+const SHA256 = require('js-sha256');
+const executePeerRequest = async (from, peers, apiCmd, data) => {
+    console.log('from: ', from);
     console.log('peers: ', peers);
     console.log('executePeerRequest: ', apiCmd);
   
@@ -13,7 +15,7 @@ const fetch = require('node-fetch');
     if(data) {
         console.log('data', data);
         requests = peers.map(peer => fetch(`http://localhost:${peer}/${apiCmd}`, 
-        {method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' }})
+        {method: 'POST', body: JSON.stringify( {from, data} ), headers: { 'Content-Type': 'application/json' }})
         .then(response => response.json()));
     }
     else{
@@ -57,5 +59,45 @@ const broadcastPeerNotice = async (minerpeers, address) => {
   });
 }
 
+const targetDifficulty = BigInt(0x8ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+
+const getBlockHash = block => {
+    return SHA256(JSON.stringify(block)).toString();
+}  
+
+const getLongestBlockchain = async (allBlockchains) => {
+    console.log('getLongestBlockchain');
+  
+    console.log('allBlockchains', allBlockchains);
+  
+    const validBlockchains = allBlockchains.filter(isValidBlockchain);
+  
+    console.log('validBlockchains', validBlockchains);
+  
+    let longestBlockchain = validBlockchains[0];
+  
+    for (let i = 1; i < validBlockchains.length; i++) {
+      if (validBlockchains[i].block.length > longestBlockchain.blocks.length) {
+        longestBlockchain = validBlockchains[i];
+      }
+    }
+  
+    console.log('longestBlockchain', longestBlockchain);
+  
+    return longestBlockchain;
+  }
+
+  const isValidBlockchain = blockchain => {
+    if (!blockchain || !blockchain.length) return false;
+  
+    for (let i = 1; i < blockchain.blocks.length; i++ ) {
+      if (blockchain.blocks[i].previousHash !== getBlockHash(blockchain.blocks[i - 1])) return false;
+    }
+  
+    return true;
+  }
+
 module.exports = { executePeerRequest,
-                   broadcastPeerNotice }
+                   broadcastPeerNotice, 
+                   targetDifficulty,
+                   getBlockHash }
