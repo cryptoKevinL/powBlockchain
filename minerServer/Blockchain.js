@@ -9,13 +9,6 @@ class Blockchain {
       //if we get update blocks from peers, we may as well stop mining the block we were doing
       this.blocksUpdatedExternally = false;  
 
-      //lets ask for blocks no matter what, so we dont
-      //have to do special cases for the genesis block
-      //the very first miner of all time, will have to 
-      //deal with a timeout here, a small price to pay
-      //so we don't have to maintain the number of miners state
-      this.getBlocksFromPeers();
-
       //if we didn't get any blocks from peers, we can 
       //start a new blockchain
       const genesisBlock = {
@@ -33,13 +26,6 @@ class Blockchain {
       this.blocks = [ genesisBlock ];
 
       this.mine();
-    }
-
-    //Get blocks from peers instead of starting new blockchain
-    getBlocksFromPeers() {
-        //submit request and wait for response first
-        //executePeerRequest('getData');
-        
     }
 
     mine(){

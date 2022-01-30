@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-let port = 4000;
+let port = 3000;
 const SHA256 = require('js-sha256');
 const { Blockchain } = require('./Blockchain');
 const { executePeerRequest, broadcastPeerNotice } = require('./utils');
@@ -18,6 +18,7 @@ if(process.argv[2])
   port = process.argv[2]
 
 var EC = require('elliptic').ec;
+const e = require('express');
 var ec = new EC('secp256k1');
 
 //TODO: not sure we need this anymore
@@ -36,6 +37,7 @@ const balances = {
 //They don't HAVE to be, but without this or a known list of "online"
 //peers, we would have to hardcode it.  That would work too...
 broadcastPeerNotice(port);
+//executePeerRequest(this.minerPeers, 'peerList').then(console.log("printed"));
 
 let minerCopyOfBlockchain = new Blockchain(port);
 let minerPeers = [];
@@ -48,7 +50,7 @@ function getShortPubFromPriv(address){
   //return shortPub;
 }
 
-// //newPeer
+// GET with parameters
 // app.get('/newPeer/:address', (req, res) => {
 //   const {address} = req.params;
 //   const balance = balances[address] || 0;
@@ -81,8 +83,14 @@ app.post('/newPeer', (req, res) => {
 
   minerPeers.push(req.body.peer)
 
-  //TODO: could optimize and return a list of our peers here
-  res.send( {result: "success"} );
+  if(this.minerPeers){
+    console.log('returning', JSON.stringify(this.minerPeers));
+    res.send(JSON.stringify(this.minerPeers));
+  }
+  else {
+    console.log('returning', JSON.stringify(port));
+    res.send({ port });
+  }
 });
 
 //if anyone calls this, return current list of blocks

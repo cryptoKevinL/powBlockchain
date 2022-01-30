@@ -1,27 +1,24 @@
-  const fetch = require('node-fetch');
-  const executePeerRequest = async (peers, type, data) => {
-    console.log('peers', peers);
-    console.log('executePeerRequest', type);
+const { response } = require('express');
+const fetch = require('node-fetch');
+  const executePeerRequest = async (peers, apiCmd, data) => {
+    console.log('peers: ', peers);
+    console.log('executePeerRequest: ', apiCmd);
   
     let requests;
+
+    //if peers is null return
+    if(!peers)
+        return;
   
-    switch(type) {
-    //   case 'postPeer':
-    //     requests = state.peers.map(peer => fetch(getPeerUri(peer, 'peers'), 
-    //     {method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' }})
-    //     .then(response => response.json()));
-    //     break;
-      case 'getData':
-          //fetch(`${server}/balance/${value}`).then((response) => { return response.json();
-        //requests = state.peers.map(peer => fetch(getPeerUri(peer, 'data')).then(response => response.json()));
-        //requests = state.peers.map(peer => fetch(`${server}/balance/${value}`).then(response => response.json()));
-        break;
-    //   case 'postData':
-    //     console.log('data', data);
-    //     requests = state.peers.map(peer => fetch(getPeerUri(peer, 'data'), 
-    //     {method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' }})
-    //     .then(response => response.json()));
-    //     break;
+    if(data) {
+        console.log('data', data);
+        requests = peers.map(peer => fetch(`http://localhost:${peer}/${apiCmd}`, 
+        {method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' }})
+        .then(response => response.json()));
+    }
+    else{
+        requests = peers.map(peer => fetch(`http://localhost:${peer}/${apiCmd}`)
+        .then(response => response.json()));
     }
   
     try {
@@ -44,8 +41,12 @@ const broadcastPeerNotice = async (address) => {
     address
   });
 
-  fetch( `http://localhost:${peer}/newPeer`, 
-  {method: 'POST', body, headers: { 'Content-Type': 'application/json' }});
+  const request = fetch( `http://localhost:${peer}/newPeer`, 
+  {method: 'POST', body, headers: { 'Content-Type': 'application/json' }}).then(response => {
+    return response.json();
+  }).then(({ port }) => {
+    console.log(`Peers: ${port}`);
+  });
 }
 
 module.exports = { executePeerRequest,
