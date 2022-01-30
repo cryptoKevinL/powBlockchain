@@ -1,18 +1,7 @@
-const genesisBlock = {
-    height: 0,  
-    previousHash: 0x0,
-    transactions: [
-      {
-        sender: 'coinbase',
-        recipient: 'kevin',
-        amount: 50
-      }
-    ],
-    nonce: 34
-  };
-
-  const executePeerRequest = async (type, data) => {
-    console.log('peers', state.peers);
+  
+  //const fetch = require('node-fetch');
+  const executePeerRequest = async (peers, type, data) => {
+    console.log('peers', peers);
     console.log('executePeerRequest', type);
   
     let requests;
@@ -43,6 +32,27 @@ const genesisBlock = {
     }
   }
 
+const broadcastPeerNotice = async (myAddress) => {
+  //bootstrapping case here...
+  //assume port 4000 (default) is satoshi
+  if(myAddress == 4000)
+    return;
+
+  //bootstrapping again, assume if we are not 4000, the 
+  //previous port/address is a peer
+  const peer = myAddress - 1;
+
+  let request = fetch(`http://localhost:${peer}/newPeer`, 
+  {method: 'POST', body: JSON.stringify(peer), headers: { 'Content-Type': 'application/json' }})
+  .then(response => response.json());
+
+  try {
+    return await Promise.all(request);
+  } catch (e) {
+    console.log('Failed fetch', e);
+  }
+}
+
 class Blockchain {
     //since this is a local blockchain, we differentiate miners by port number
     constructor(minerPort) {
@@ -51,6 +61,8 @@ class Blockchain {
       this.isMining = false;
       this.blocks =[];
       this.minerPort = minerPort;
+      //if we get update blocks from peers, we may as well stop mining the block we were doing
+      this.blocksUpdatedExternally = false;  
 
       //lets ask for blocks no matter what, so we dont
       //have to do special cases for the genesis block
@@ -61,6 +73,18 @@ class Blockchain {
 
       //if we didn't get any blocks from peers, we can 
       //start a new blockchain
+      const genesisBlock = {
+        height: 0,  
+        previousHash: 0x0,
+        transactions: [
+          {
+            sender: 'coinbase',
+            recipient: minerPort.toString(),
+            amount: 50
+          }
+        ],
+        nonce: 34
+      };
       this.blocks = [ genesisBlock ];
 
       this.mine();
@@ -74,10 +98,23 @@ class Blockchain {
     }
 
     mine(){
+        this.isMining = true;       
+      
         setInterval(() => {
+        //break out of current POW loop, if someone else mined this block
+        if(this.blocksUpdatedExternally){
+          this.blocksUpdatedExternally = false;
+          this.isMining = false;
+          return;
+        }
+
         console.log(`Miner: ${this.minerPort} mined a block`);
-        }, 500);
+
+        //TODO:
+        //broadcast successfully mined block
+        
+        }, 5000);
     }
 }
 
-module.exports = { Blockchain }
+module.exports = { Blockchain, executePeerRequest, broadcastPeerNotice }
