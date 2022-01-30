@@ -44,9 +44,9 @@ const broadcastPeerNotice = async (minerpeers, address) => {
   const request = fetch( `http://localhost:${peer}/newPeer`, 
   {method: 'POST', body, headers: { 'Content-Type': 'application/json' }}).then(response => {
     return response.json();
-  }).then(({ port }) => {
-    console.log(`Peers: ${port}`);
-    minerpeers.push(port);
+  }).then(({ peerPort }) => {
+    console.log(`Peers: ${peerPort}`);
+    minerpeers.push(peerPort);
   });
 }
 

@@ -81,16 +81,12 @@ app.post('/newPeer', (req, res) => {
   console.log('POST /newPeer');
   console.log('req.body', req.body);
 
-  minerPeers.push(req.body.peer)
+  minerPeers.push(req.body.address)
 
-  if(this.minerPeers){
-    console.log('returning', JSON.stringify(this.minerPeers));
-    res.send(JSON.stringify(this.minerPeers));
-  }
-  else {
-    console.log('returning', JSON.stringify(port));
-    res.send({ port });
-  }
+  let peerPort = JSON.stringify(minerPeers);
+
+  console.log('returning peers', peerPort);
+  res.send({ peerPort });
 });
 
 //if anyone calls this, return current list of blocks
