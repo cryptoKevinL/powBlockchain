@@ -205,9 +205,13 @@ app.post('/minedBlock', (req, res) => {
       const result = key.verify(transactionHash, newBlocks[checkLatestBlockIndex].transactions[i].signature);
       //update our local copy of the blanace sheet (if we are not using UTXOs)
       if( result ){
-        console.log("Transaction Success");
-        if(!isCoinbase) 
+        if(!isCoinbase) {
+          console.log(`Transaction Success - From: ${signerPublicKey} - To: ${recepientPublicKey}`);
           balances[signerPublicKey] -= amount;
+        }
+        else
+          console.log(`Coinbase Transaction Success for PubKey: ${signerPublicKey}`);
+          
         balances[recepientPublicKey] = (balances[recepientPublicKey] || 0) + amount;
         //res.send({ balance: balances[sender] });
         console.log("Balances according to Miner: ", port, balances);
@@ -269,9 +273,13 @@ app.post('/minedBlock', (req, res) => {
       const result = key.verify(transactionHash, newBlocks[checkLatestBlockIndex].transactions[i].signature);
       //update our local copy of the blanace sheet (if we are not using UTXOs)
       if( result ){
-        console.log("Transaction Success");
-        if(!isCoinbase) 
+        if(!isCoinbase) {
+          console.log(`Transaction Success - From: ${signerPublicKey} - To: ${recepientPublicKey}`);
           balances[signerPublicKey] -= amount;
+        }
+        else
+          console.log(`Coinbase Transaction Success for PubKey: ${signerPublicKey}`);
+          
         balances[recepientPublicKey] = (balances[recepientPublicKey] || 0) + amount;
         //res.send({ balance: balances[sender] });
         console.log("Balances according to Miner: ", port, balances);

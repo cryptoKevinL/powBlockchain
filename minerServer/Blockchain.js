@@ -140,7 +140,7 @@ class Blockchain {
             
             candidateNonce = 1;
           }
-        }, 1000);
+        }, 2000);
     }
 }
 
