@@ -6,6 +6,9 @@ const SHA256 = require('js-sha256');
 const { Blockchain } = require('./Blockchain');
 const { executePeerRequest, broadcastPeerNotice } = require('./utils');
 
+//TODO:
+//Node Management Server could provide bootstrap type functions,
+//like trusted peer lists for new node bringup
 const serverForNodeManagement = `http://localhost:3042`;
 
 // localhost can have cross origin errors
@@ -20,19 +23,21 @@ if(process.argv[2])
 var EC = require('elliptic').ec;
 const e = require('express');
 var ec = new EC('secp256k1');
+const key = ec.genKeyPair();
+//TODO: longer term, we would do this locally, and interface/wallet generate and store the private key
+const publicKey = key.getPublic().encode('hex');
+const privateKey = key.getPrivate().toString('hex');
 
-//TODO: not sure we need this anymore
+//TODO: would we keep track of a local balance sheet for speed?
+//balances would be similar to Ethereum, Bitcoin uses UTXO 
 const balances = {
   // [publicKey1]: 100,
   // [publicKey2]: 50,
   // [publicKey3]: 75,
-  1: 100,
-  2: 50,
-  3: 75,
 }
 
 let minerPeers = new Array(); //originally was trying to keep this separate from BC data struct but got stuck/out of time
-let minerCopyOfBlockchain = new Blockchain(port, minerPeers);
+let minerCopyOfBlockchain = new Blockchain(port, minerPeers, key);
 let minerAddress = port.toString();
 
 //for bootstrapping this BC, we could assume "addresses" are sequenetial.  
@@ -121,6 +126,9 @@ app.post('/minedBlock', (req, res) => {
   //verify the hash and the transactions
   //This would likely be offloaded into a separate thread, 
   //but for a weekend project we are going to be lazy.  
+
+  //TODO:
+  //update our local copy of the blanace sheet (if we are not using UTXOs)
 
   //Now verify that this blockchain is longer than the one we currently have
   //otherwise we would ignore the peer broadcast, as they are behind the times,

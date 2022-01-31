@@ -5,6 +5,11 @@ const server = "http://localhost:3042";
 
 var EC = require('elliptic').ec;
 var ec = new EC('secp256k1');
+const key = ec.genKeyPair();
+//TODO: longer term, we would do this locally, and interface/wallet generate and store the private key
+const publicKey = key.getPublic().encode('hex');
+const privateKey = key.getPrivate().toString('hex');
+//TODO: we need to announce these keys to the network 
 
 document.getElementById("exchange-address").addEventListener('input', ({ target: {value} }) => {
   if(value === "") {
