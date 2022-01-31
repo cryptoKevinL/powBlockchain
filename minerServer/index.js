@@ -28,7 +28,7 @@ const key = ec.genKeyPair();
 const publicKey = key.getPublic().encode('hex');
 const privateKey = key.getPrivate().toString('hex');
 
-//TODO: would we keep track of a local balance sheet for speed?
+//keep track of a local balance sheet for speed
 //balances would be similar to Ethereum, Bitcoin uses UTXO 
 const balances = {
   // [publicKey1]: 100,
@@ -58,12 +58,47 @@ function clearArray(array) {
   }
 }
 
+app.post('/send', (req, res) => {
+  const {sender, recipient, amount, rSig, sSig} = req.body;
+  //const {sender, recipient, amount} = req.body;
+
+  const bodyLocal = JSON.stringify({
+    sender, amount, recipient
+  });
+
+  const signature = {
+    r: rSig,
+    s: sSig
+  };
+
+  const key = ec.keyFromPublic(sender, 'hex');
+  const msgHash = SHA256(bodyLocal);
+  const result = key.verify(msgHash, signature);
+
+  //TODO:
+  //add transaction to mempool 
+  const transaction = 
+  {
+    sender: sender,
+    recipient: recipient, 
+    amount: amount,
+    signature: signature
+  }
+  this.minerCopyOfBlockchain.addToMempool(transaction);
+
+  // if( result ){
+  //   balances[sender] -= amount;
+  //   balances[recipient] = (balances[recipient] || 0) + +amount;
+  //   res.send({ balance: balances[sender] });
+  // }
+});
+
 // GET with parameters
-// app.get('/newPeer/:address', (req, res) => {
-//   const {address} = req.params;
-//   const balance = balances[address] || 0;
-//   //res.send({ balance });
-// });
+app.get('/balance/:address', (req, res) => {
+  const {address} = req.params;
+  const balance = balances[address] || 0;
+  res.send({ balance });
+});
 
 //if anyone calls this, return true
 app.get('/checkPeerAlive', (req, res) => {
@@ -123,7 +158,8 @@ app.post('/minedBlock', (req, res) => {
   console.log(`Peer: ${peerAddress} has notified you of a POW mined block`)
 
   let signerPublicKey = "";
-  let coinbaseIndex = 0;
+  let recepientPublicKey = ""; 
+  let isCoinbase = false;
   let amount = 0;
   let checkLatestBlockIndex = newBlocks.length - 1;  //TODO: not sure if we need last block or first one (we want newest one)
 
@@ -131,30 +167,52 @@ app.post('/minedBlock', (req, res) => {
   //we send ourselves a message
   if(JSON.stringify(newBlocks) == JSON.stringify(minerCopyOfBlockchain.blocks))
   {
-    console.log("Sent an update to ourself");
-    //updating ourself (mainly for blances)
+    //grab the signers public key (in this case it should be us)
     for(let i=0; i<newBlocks[checkLatestBlockIndex].transactions.length; i++){
-      if (newBlocks[checkLatestBlockIndex].transactions[i].sender == 'coinbase'){
-        signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
-        coinbaseIndex = i;
-        amount = newBlocks[checkLatestBlockIndex].transactions[i].amount;
-        break;
-      }
+       if (newBlocks[checkLatestBlockIndex].transactions[i].sender == 'coinbase'){
+         signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
+       }
     }
+    //first check blockhash
     const key = ec.keyFromPublic(signerPublicKey, 'hex');
     const blockHash = minerCopyOfBlockchain.hashBlock(newBlocks[checkLatestBlockIndex]);
     const result = key.verify(blockHash, newBlocks[checkLatestBlockIndex].signature);
     //update our local copy of the blanace sheet (if we are not using UTXOs)
-    //TODO: this is only handling the coinbase TX
     if( result ){
       console.log("Verified Blockhash (self)");
-      // balances[sender] -= amount;
-      balances[signerPublicKey] = (balances[signerPublicKey] || 0) + amount;
-      // res.send({ balance: balances[sender] });
-      console.log("Balances according to Miner: ", port, balances);
     }
     else {
-      console.log("Blockhash verify failed");
+      return;
+      console.log("Blockhash verify failed (self)");
+    }
+
+    //now check transactions
+    //updating ourself (mainly for blances)
+    for(let i=0; i<newBlocks[checkLatestBlockIndex].transactions.length; i++){
+      isCoinbase = false;
+      signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].sender;
+      if(signerPublicKey == 'coinbase') {
+         isCoinbase = true;
+         signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
+      }
+      amount = newBlocks[checkLatestBlockIndex].transactions[i].amount;
+      recepientPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
+   
+      const key = ec.keyFromPublic(signerPublicKey, 'hex');
+      const transactionHash = minerCopyOfBlockchain.hashTransaction(newBlocks[checkLatestBlockIndex].transactions[i]);
+      const result = key.verify(transactionHash, newBlocks[checkLatestBlockIndex].transactions[i].signature);
+      //update our local copy of the blanace sheet (if we are not using UTXOs)
+      if( result ){
+        console.log("Transaction Success");
+        if(!isCoinbase) 
+          balances[signerPublicKey] -= amount;
+        balances[recepientPublicKey] = (balances[recepientPublicKey] || 0) + amount;
+        //res.send({ balance: balances[sender] });
+        console.log("Balances according to Miner: ", port, balances);
+      }
+      else {
+        console.log("Transaction verify failed");
+      }
     }
   }
   
@@ -185,16 +243,40 @@ app.post('/minedBlock', (req, res) => {
     const blockHash = minerCopyOfBlockchain.hashBlock(newBlocks[checkLatestBlockIndex]);
     const result = key.verify(blockHash, newBlocks[checkLatestBlockIndex].signature);
     //update our local copy of the blanace sheet (if we are not using UTXOs)
-    //TODO: this is only handling the coinbase TX
     if( result ){
       console.log("Verified Blockhash");
-      // balances[sender] -= amount;
-      balances[signerPublicKey] = (balances[signerPublicKey] || 0) + amount;
-      // res.send({ balance: balances[sender] });
-      console.log("Balances according to Miner: ", port, balances);
     }
     else {
       console.log("Blockhash verify failed");
+      return;
+    }
+
+    //now check transactions
+    for(let i=0; i<newBlocks[checkLatestBlockIndex].transactions.length; i++){
+      isCoinbase = false;
+      signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].sender;
+      if(signerPublicKey == 'coinbase') {
+         isCoinbase = true;
+         signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
+      }
+      amount = newBlocks[checkLatestBlockIndex].transactions[i].amount;
+      recepientPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
+   
+      const key = ec.keyFromPublic(signerPublicKey, 'hex');
+      const transactionHash = minerCopyOfBlockchain.hashTransaction(newBlocks[checkLatestBlockIndex].transactions[i]);
+      const result = key.verify(transactionHash, newBlocks[checkLatestBlockIndex].transactions[i].signature);
+      //update our local copy of the blanace sheet (if we are not using UTXOs)
+      if( result ){
+        console.log("Transaction Success");
+        if(!isCoinbase) 
+          balances[signerPublicKey] -= amount;
+        balances[recepientPublicKey] = (balances[recepientPublicKey] || 0) + amount;
+        //res.send({ balance: balances[sender] });
+        console.log("Balances according to Miner: ", port, balances);
+      }
+      else {
+        console.log("Transaction verify failed");
+      }
     }
 
     //stop the current mining going on, then update the blocks

@@ -43,15 +43,25 @@ class Blockchain {
       this.mine();
     }
 
-    signTransaction(transactionToSign){
-      const sender = transactionToSign.sender;
-      const recipient = transactionToSign.recipient;
-      const amount = transactionToSign.amount;
+    addToMempool(transaction){
+       console.log("adding transaction to mempool: ", transaction);
+       this.mempool.push(transaction);
+    }
+
+    hashTransaction(transactionToHash){
+      const sender = transactionToHash.sender;
+      const recipient = transactionToHash.recipient;
+      const amount = transactionToHash.amount;
 
       const local = JSON.stringify({
         sender, recipient, amount
       });
       const msgHash = SHA256(local);
+      return msgHash;
+    }
+
+    signTransaction(transactionToSign){
+      const msgHash = this.hashTransaction(transactionToSign);
       const signature = this.keyPair.sign(msgHash.toString());
       return signature;
     }
@@ -101,6 +111,12 @@ class Blockchain {
             nonce: candidateNonce,
             signature: ""
           };
+
+          //TODO: do we add mempool transactions before mining or after?
+          //here will will just add one (eventually grab the N most valuable to fit in block size)
+          if(this.mempool.length > 1)
+            candidateBlock.transactions.push(this.mempool.pop());
+          
           const candidateBlockHash = this.hashBlock(candidateBlock);
 
           candidateNonce++;

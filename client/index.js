@@ -1,7 +1,7 @@
 import * as styles from './index.scss'; 
 const SHA256 = require('js-sha256');
-
-const server = "http://localhost:3042";
+const port = 4000; //TODO: bootstrap port 4000 is "well known" peer...
+const server = `http://localhost:${port}`;
 
 var EC = require('elliptic').ec;
 var ec = new EC('secp256k1');
