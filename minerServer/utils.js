@@ -9,8 +9,9 @@ const executePeerRequest = async (from, peers, apiCmd, data) => {
     let requests;
 
     //if peers is null return
-    if(!peers)
+    if(!peers){
         return;
+    }
   
     if(data) {
         //console.log('data', data);

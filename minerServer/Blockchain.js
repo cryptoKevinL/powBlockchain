@@ -117,7 +117,10 @@ class Blockchain {
             //feel as if this should happen in miner code, but currently too lazy to alert
             executePeerRequest(this.minerPort, this.minerPeers, 'minedBlock', { blocks: this.blocks });
 
-            //TODO: update our miners copy of balances too
+            //TODO: update our miners copy of balances too (not sure how I update parent without just sending to ourself)
+            const myself = [];
+            myself.push(this.minerPort);
+            executePeerRequest(this.minerPort, myself, 'minedBlock', { blocks: this.blocks });
             
             candidateNonce = 1;
           }

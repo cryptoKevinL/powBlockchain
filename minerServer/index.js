@@ -122,6 +122,42 @@ app.post('/minedBlock', (req, res) => {
   const newBlocks = req.body.data.blocks;
   console.log(`Peer: ${peerAddress} has notified you of a POW mined block`)
 
+  let signerPublicKey = "";
+  let coinbaseIndex = 0;
+  let amount = 0;
+  let checkLatestBlockIndex = newBlocks.length - 1;  //TODO: not sure if we need last block or first one (we want newest one)
+
+  //this is a hack to update our own params after we mine a block
+  //we send ourselves a message
+  if(JSON.stringify(newBlocks) == JSON.stringify(minerCopyOfBlockchain.blocks))
+  {
+    console.log("Sent an update to ourself");
+    //updating ourself (mainly for blances)
+    for(let i=0; i<newBlocks[checkLatestBlockIndex].transactions.length; i++){
+      if (newBlocks[checkLatestBlockIndex].transactions[i].sender == 'coinbase'){
+        signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
+        coinbaseIndex = i;
+        amount = newBlocks[checkLatestBlockIndex].transactions[i].amount;
+        break;
+      }
+    }
+    const key = ec.keyFromPublic(signerPublicKey, 'hex');
+    const blockHash = minerCopyOfBlockchain.hashBlock(newBlocks[checkLatestBlockIndex]);
+    const result = key.verify(blockHash, newBlocks[checkLatestBlockIndex].signature);
+    //update our local copy of the blanace sheet (if we are not using UTXOs)
+    //TODO: this is only handling the coinbase TX
+    if( result ){
+      console.log("Verified Blockhash (self)");
+      // balances[sender] -= amount;
+      balances[signerPublicKey] = (balances[signerPublicKey] || 0) + amount;
+      // res.send({ balance: balances[sender] });
+      console.log("Balances according to Miner: ", port, balances);
+    }
+    else {
+      console.log("Blockhash verify failed");
+    }
+  }
+  
   //Now verify that this blockchain is longer than the one we currently have
   //otherwise we would ignore the peer broadcast, as they are behind the times,
   //or they are trying to hack the blockchain and they are bad people
@@ -136,10 +172,6 @@ app.post('/minedBlock', (req, res) => {
     //TODO:we should only verify the "new" blocks not the entire 
     //blockchain, weekend project hack here.
     //find coinbase tx to grab publicKey (again a bit of a hack to not add yet another field)
-    let signerPublicKey = "";
-    let coinbaseIndex = 0;
-    let amount = 0;
-    let checkLatestBlockIndex = newBlocks.length - 1;  //TODO: not sure if we need last block or first one (we want newest one)
     //console.log('NewBlocks: ', newBlocks);
     for(let i=0; i<newBlocks[checkLatestBlockIndex].transactions.length; i++){
       if (newBlocks[checkLatestBlockIndex].transactions[i].sender == 'coinbase'){
@@ -159,7 +191,7 @@ app.post('/minedBlock', (req, res) => {
       // balances[sender] -= amount;
       balances[signerPublicKey] = (balances[signerPublicKey] || 0) + amount;
       // res.send({ balance: balances[sender] });
-      console.log("Balances according to Miner: ", this.publicKey, balances);
+      console.log("Balances according to Miner: ", port, balances);
     }
     else {
       console.log("Blockhash verify failed");
