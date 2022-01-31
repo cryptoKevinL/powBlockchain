@@ -139,18 +139,19 @@ app.post('/minedBlock', (req, res) => {
     let signerPublicKey = "";
     let coinbaseIndex = 0;
     let amount = 0;
+    let checkLatestBlockIndex = newBlocks.length - 1;  //TODO: not sure if we need last block or first one (we want newest one)
     //console.log('NewBlocks: ', newBlocks);
-    for(let i=0; i<newBlocks[newBlocksLength-1].transactions.length; i++){
-      if (newBlocks[newBlocksLength-1].transactions[i].sender == 'coinbase'){
-        signerPublicKey = newBlocks[newBlocksLength-1].transactions[i].recipient;
+    for(let i=0; i<newBlocks[checkLatestBlockIndex].transactions.length; i++){
+      if (newBlocks[checkLatestBlockIndex].transactions[i].sender == 'coinbase'){
+        signerPublicKey = newBlocks[checkLatestBlockIndex].transactions[i].recipient;
         coinbaseIndex = i;
-        amount = newBlocks[newBlocksLength-1].transactions[i].amount;
+        amount = newBlocks[checkLatestBlockIndex].transactions[i].amount;
         break;
       }
     }
     const key = ec.keyFromPublic(signerPublicKey, 'hex');
-    const blockHash = minerCopyOfBlockchain.hashBlock(newBlocks[coinbaseIndex]);
-    const result = key.verify(blockHash, newBlocks[coinbaseIndex].signature);
+    const blockHash = minerCopyOfBlockchain.hashBlock(newBlocks[checkLatestBlockIndex]);
+    const result = key.verify(blockHash, newBlocks[checkLatestBlockIndex].signature);
     //update our local copy of the blanace sheet (if we are not using UTXOs)
     //TODO: this is only handling the coinbase TX
     if( result ){

@@ -116,6 +116,8 @@ class Blockchain {
             //broadcast successfully mined block
             //feel as if this should happen in miner code, but currently too lazy to alert
             executePeerRequest(this.minerPort, this.minerPeers, 'minedBlock', { blocks: this.blocks });
+
+            //TODO: update our miners copy of balances too
             
             candidateNonce = 1;
           }
