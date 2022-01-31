@@ -27,17 +27,17 @@ class Blockchain {
         transactions: [
           {
             sender: 'coinbase',
-            recipient: minerPort.toString(),
+            recipient: this.keyPair.getPublic().encode('hex'),
             amount: 50,
             signature: ""
           }
         ],
         nonce: 34,
-        blockSignature: ""
+        signature: ""
       };
       genesisBlock.transactions[0].signature = this.signTransaction(genesisBlock.transactions[0]);
       this.coinbaseSig = genesisBlock.transactions[0].signature;
-      genesisBlock.blockSignature = this.signBlock(genesisBlock);
+      genesisBlock.signature = this.signBlock(genesisBlock);
       this.blocks = [ genesisBlock ];
 
       this.mine();
@@ -56,16 +56,20 @@ class Blockchain {
       return signature;
     }
 
-    signBlock(blockToSign){
-      const height = blockToSign.height;
-      const previousHash = blockToSign.previousHash;
-      const transactions = blockToSign.transactions;
-      const nonce = blockToSign.nonce;
+    hashBlock(blockToHash){
+      const height = blockToHash.height;
+      const previousHash = blockToHash.previousHash;
+      const transactions = blockToHash.transactions;
+      const nonce = blockToHash.nonce;
 
       const local = JSON.stringify({
         height, previousHash, transactions, nonce
       });
-      const msgHash = SHA256(local);
+
+      return SHA256(local);
+    }
+    signBlock(blockToSign){
+      const msgHash = this.hashBlock(blockToSign);
       const signature = this.keyPair.sign(msgHash.toString());
       return signature;
     }
@@ -89,23 +93,24 @@ class Blockchain {
             transactions: [
               {
                 sender: 'coinbase',
-                recipient: this.minerPort.toString(), //miner port is our address in this example for now until we add pub/priv keys
+                recipient: this.keyPair.getPublic().encode('hex'), //miner port is our address in this example for now until we add pub/priv keys
                 amount: 50,
                 signature: this.coinbaseSig
               }
             ],
-            nonce: candidateNonce
+            nonce: candidateNonce,
+            signature: ""
           };
-
-          const candidateBlockStringified = JSON.stringify(candidateBlock);
-
-          const candidateBlockHash = SHA256(candidateBlockStringified);
+          const candidateBlockHash = this.hashBlock(candidateBlock);
 
           candidateNonce++;
 
           if (BigInt(`0x${candidateBlockHash}`) < targetDifficulty) {
+            const blockSignature = this.signBlock(candidateBlock);
+            candidateBlock.signature = blockSignature;
             console.log(`Miner: ${this.minerPort} mined a block`);
             console.log('candidateBlockHash', candidateBlockHash.toString());
+            //console.log('candidateBlockSignature', blockSignature);
             this.blocks.push(candidateBlock);
 
             //broadcast successfully mined block

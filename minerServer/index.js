@@ -121,20 +121,48 @@ app.post('/minedBlock', (req, res) => {
   const peerAddress = req.body.from;
   const newBlocks = req.body.data.blocks;
   console.log(`Peer: ${peerAddress} has notified you of a POW mined block`)
-  
-  //TODO:
-  //verify the hash and the transactions
-  //This would likely be offloaded into a separate thread, 
-  //but for a weekend project we are going to be lazy.  
-
-  //TODO:
-  //update our local copy of the blanace sheet (if we are not using UTXOs)
 
   //Now verify that this blockchain is longer than the one we currently have
   //otherwise we would ignore the peer broadcast, as they are behind the times,
   //or they are trying to hack the blockchain and they are bad people
-  if (newBlocks.length > minerCopyOfBlockchain.blocks.length) {
+  const newBlocksLength = newBlocks.length;
+  if (newBlocksLength > minerCopyOfBlockchain.blocks.length) {
     console.log('Updating local blockchain');
+
+    //TODO:
+    //verify the hash and the transactions
+    //This would likely be offloaded into a separate thread, 
+    //but for a weekend project we are going to be lazy.
+    //TODO:we should only verify the "new" blocks not the entire 
+    //blockchain, weekend project hack here.
+    //find coinbase tx to grab publicKey (again a bit of a hack to not add yet another field)
+    let signerPublicKey = "";
+    let coinbaseIndex = 0;
+    let amount = 0;
+    //console.log('NewBlocks: ', newBlocks);
+    for(let i=0; i<newBlocks[newBlocksLength-1].transactions.length; i++){
+      if (newBlocks[newBlocksLength-1].transactions[i].sender == 'coinbase'){
+        signerPublicKey = newBlocks[newBlocksLength-1].transactions[i].recipient;
+        coinbaseIndex = i;
+        amount = newBlocks[newBlocksLength-1].transactions[i].amount;
+        break;
+      }
+    }
+    const key = ec.keyFromPublic(signerPublicKey, 'hex');
+    const blockHash = minerCopyOfBlockchain.hashBlock(newBlocks[coinbaseIndex]);
+    const result = key.verify(blockHash, newBlocks[coinbaseIndex].signature);
+    //update our local copy of the blanace sheet (if we are not using UTXOs)
+    //TODO: this is only handling the coinbase TX
+    if( result ){
+      console.log("Verified Blockhash");
+      // balances[sender] -= amount;
+      balances[signerPublicKey] = (balances[signerPublicKey] || 0) + amount;
+      // res.send({ balance: balances[sender] });
+      console.log("Balances according to Miner: ", this.publicKey, balances);
+    }
+    else {
+      console.log("Blockhash verify failed");
+    }
 
     //stop the current mining going on, then update the blocks
     //and start mining again
