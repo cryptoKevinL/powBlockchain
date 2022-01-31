@@ -27,6 +27,8 @@ const key = ec.genKeyPair();
 //TODO: longer term, we would do this locally, and interface/wallet generate and store the private key
 const publicKey = key.getPublic().encode('hex');
 const privateKey = key.getPrivate().toString('hex');
+console.log(`PublicKey: ${publicKey}`); 
+console.log(`PrivateKey: ${privateKey}`);
 
 //keep track of a local balance sheet for speed
 //balances would be similar to Ethereum, Bitcoin uses UTXO 
@@ -84,7 +86,7 @@ app.post('/send', (req, res) => {
     amount: amount,
     signature: signature
   }
-  this.minerCopyOfBlockchain.addToMempool(transaction);
+  minerCopyOfBlockchain.addToMempool(transaction);
 
   // if( result ){
   //   balances[sender] -= amount;
